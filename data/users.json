@@ -1,0 +1,15 @@
+{
+  "5f171d44-06e": {
+    "id": "5f171d44-06e",
+    "username": "sbhxmod",
+    "email": "sabujhawlader31@gmail.com",
+    "password_hash": "scrypt:32768:8:1$xny5o0xHSwuM7t1D$14e5b1b1d133a9e41cc7d1efecb951cd25ec96bf080b0b64fb6efd69fbbcd823fe0cc0641780c28e75d4982f23e473bc5d4249dec9f477920f2453c8bea4c3a3",
+    "created_at": 1772820041.607044,
+    "is_admin": true,
+    "bio": "",
+    "quota_mb": 20480,
+    "api_token": "tok_2147ae113b11380e909c742cd10b9acd7523a260",
+    "avatar_color": "#E8A838",
+    "bandwidth_used": 878618403
+  }
+}
