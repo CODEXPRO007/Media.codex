@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}MediaVault Pro{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #06080D;
+  --bg2:      #0A0D14;
+  --bg3:      #0F1520;
+  --card:     #0C1019;
+  --card2:    #101620;
+  --border:   rgba(255,255,255,.06);
+  --border2:  rgba(255,255,255,.1);
+  --border3:  rgba(255,255,255,.15);
+  --gold:     #E8A838;
+  --gold2:    #F5C96A;
+  --gold3:    rgba(232,168,56,.15);
+  --cyan:     #00D4FF;
+  --red:      #FF4757;
+  --green:    #2ED573;
+  --blue:     #4A9EFF;
+  --purple:   #A855F7;
+  --orange:   #FF6B35;
+  --text:     #EEF2F8;
+  --text2:    #8B95A8;
+  --text3:    #3D4A5C;
+  --r:        10px;
+  --sidebar:  240px;
+
+  --video:    #FF6B35;
+  --audio:    #A855F7;
+  --image:    #00D4FF;
+  --archive:  #F59E0B;
+  --pdf:      #FF4757;
+  --document: #4A9EFF;
+  --code:     #2ED573;
+  --text-f:   #8B95A8;
+  --file:     #6B7A8D;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+a{color:var(--gold);text-decoration:none;transition:color .18s}
+a:hover{color:var(--gold2)}
+button,.btn{font-family:'Outfit',sans-serif;cursor:pointer;border:none;outline:none;transition:all .18s}
+input,textarea,select{font-family:'Outfit',sans-serif;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--r);padding:9px 14px;font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,168,56,.12)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+label{display:block;font-size:.76rem;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.07em}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:3px}
+
+/* ─── Buttons ─── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:.86rem;font-weight:600;letter-spacing:.02em}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:var(--gold2);color:#000;transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,168,56,.35)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);background:var(--gold3)}
+.btn-red{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.25)}
+.btn-red:hover{background:rgba(255,71,87,.2)}
+.btn-green{background:rgba(46,213,115,.1);color:var(--green);border:1px solid rgba(46,213,115,.2)}
+.btn-green:hover{background:rgba(46,213,115,.18)}
+.btn-blue{background:rgba(74,158,255,.1);color:var(--blue);border:1px solid rgba(74,158,255,.2)}
+.btn-blue:hover{background:rgba(74,158,255,.18)}
+.btn-purple{background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.2)}
+.btn-purple:hover{background:rgba(168,85,247,.18)}
+.btn-sm{padding:5px 12px;font-size:.78rem;border-radius:7px}
+.btn-lg{padding:12px 28px;font-size:.95rem}
+.btn-icon{padding:7px;border-radius:8px}
+.btn-full{width:100%;justify-content:center}
+
+/* ─── Top Nav ─── */
+.topnav{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:200;
+  background:rgba(6,8,13,.92);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px 0 0;gap:0;
+}
+.topnav-logo{
+  width:var(--sidebar);min-width:var(--sidebar);height:100%;
+  display:flex;align-items:center;padding:0 20px;
+  font-size:1.2rem;font-weight:800;color:var(--text);
+  border-right:1px solid var(--border);gap:8px;
+  white-space:nowrap;
+}
+.topnav-logo .dot{color:var(--gold)}
+.topnav-search{flex:1;max-width:420px;margin:0 20px;position:relative}
+.topnav-search input{background:var(--bg3);border-color:var(--border);border-radius:8px;padding:7px 14px 7px 36px;font-size:.84rem}
+.topnav-search .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.85rem;pointer-events:none}
+.topnav-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.topnav-link{padding:6px 12px;border-radius:7px;font-size:.82rem;font-weight:500;color:var(--text2);transition:all .18s}
+.topnav-link:hover,.topnav-link.active{color:var(--text);background:var(--bg3)}
+.user-menu{position:relative}
+.user-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;cursor:pointer;border:2px solid transparent;transition:border-color .18s}
+.user-avatar:hover{border-color:var(--gold)}
+.user-dropdown{
+  position:absolute;top:calc(100%+8px);right:0;min-width:220px;
+  background:var(--card2);border:1px solid var(--border2);border-radius:12px;
+  padding:8px;box-shadow:0 20px 60px rgba(0,0,0,.6);z-index:300;
+  display:none;animation:fadeIn .15s ease;
+}
+.user-menu:hover .user-dropdown{display:block}
+.ud-header{padding:10px 12px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.ud-name{font-weight:700;font-size:.9rem}
+.ud-email{font-size:.76rem;color:var(--text2);margin-top:1px}
+.ud-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;color:var(--text2);font-size:.84rem;transition:all .15s}
+.ud-item:hover{background:var(--bg3);color:var(--text)}
+.ud-item.danger{color:var(--red)}
+.ud-item.danger:hover{background:rgba(255,71,87,.08)}
+.ud-sep{height:1px;background:var(--border);margin:6px 0}
+
+/* ─── Sidebar ─── */
+.sidebar{
+  position:fixed;top:58px;left:0;bottom:0;width:var(--sidebar);
+  background:var(--bg2);border-right:1px solid var(--border);
+  overflow-y:auto;z-index:100;padding:16px 12px 24px;
+  display:flex;flex-direction:column;gap:0;
+}
+.sb-section{margin-bottom:20px}
+.sb-label{font-size:.68rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;padding:0 8px;margin-bottom:6px}
+.sb-link{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:.84rem;font-weight:500;color:var(--text2);transition:all .18s;position:relative}
+.sb-link:hover{background:var(--bg3);color:var(--text)}
+.sb-link.active{background:var(--gold3);color:var(--gold);border:1px solid rgba(232,168,56,.2)}
+.sb-link .badge-count{margin-left:auto;background:var(--bg3);color:var(--text3);font-size:.68rem;padding:1px 7px;border-radius:10px;font-weight:600}
+.sb-link .icon{width:18px;text-align:center;flex-shrink:0}
+.sidebar-quota{margin-top:auto;padding:0 4px}
+.sq-label{font-size:.74rem;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.sq-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.sq-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .4s}
+.sq-fill.warning{background:linear-gradient(90deg,#FF6B35,#FF4757)}
+
+/* ─── Main Layout ─── */
+.layout{display:flex;min-height:100vh;padding-top:58px}
+.main-content{flex:1;margin-left:var(--sidebar);padding:24px;max-width:100%}
+
+/* ─── Cards ─── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card-title{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);display:flex;align-items:center;gap:8px}
+.card-body{padding:18px}
+
+/* ─── Flash ─── */
+.flash-wrap{padding:10px 24px 0;margin-left:var(--sidebar)}
+.flash{padding:10px 16px;border-radius:8px;font-size:.84rem;display:flex;align-items:center;gap:8px;animation:slideIn .25s ease}
+.flash-success{background:rgba(46,213,115,.08);border:1px solid rgba(46,213,115,.2);color:var(--green)}
+.flash-error{background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.2);color:var(--red)}
+.flash-info{background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.2);color:var(--blue)}
+.flash-warning{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--archive)}
+
+/* ─── Badge ─── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.badge-video{background:rgba(255,107,53,.12);color:var(--video);border:1px solid rgba(255,107,53,.2)}
+.badge-audio{background:rgba(168,85,247,.12);color:var(--audio);border:1px solid rgba(168,85,247,.2)}
+.badge-image{background:rgba(0,212,255,.1);color:var(--image);border:1px solid rgba(0,212,255,.18)}
+.badge-archive{background:rgba(245,158,11,.1);color:var(--archive);border:1px solid rgba(245,158,11,.2)}
+.badge-pdf{background:rgba(255,71,87,.1);color:var(--pdf);border:1px solid rgba(255,71,87,.2)}
+.badge-document{background:rgba(74,158,255,.1);color:var(--document);border:1px solid rgba(74,158,255,.2)}
+.badge-code{background:rgba(46,213,115,.08);color:var(--code);border:1px solid rgba(46,213,115,.18)}
+.badge-text,.badge-file{background:rgba(107,122,141,.1);color:var(--file);border:1px solid rgba(107,122,141,.18)}
+
+/* ─── URL Box ─── */
+.url-box{display:flex;align-items:stretch;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+.url-box input{border:none;border-radius:0;background:transparent;padding:9px 12px;font-size:.78rem;font-family:'JetBrains Mono',monospace;color:var(--text2)}
+.copy-btn{padding:9px 14px;background:var(--bg3);border-left:1px solid var(--border);color:var(--text2);font-size:.78rem;cursor:pointer;white-space:nowrap;font-weight:600;transition:all .15s}
+.copy-btn:hover{background:var(--gold);color:#000}
+
+/* ─── Toast ─── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card2);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:.84rem;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;gap:10px;transform:translateY(80px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.t-success{border-color:rgba(46,213,115,.3);color:var(--green)}
+.toast.t-error{border-color:rgba(255,71,87,.3);color:var(--red)}
+
+/* ─── Modal ─── */
+.modal-bg{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--card2);border:1px solid var(--border2);border-radius:16px;padding:28px;width:100%;max-width:460px;animation:fadeIn .2s ease}
+.modal-title{font-size:1rem;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+
+/* ─── Type icons ─── */
+.type-icon{display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem;flex-shrink:0}
+.ti-video{background:rgba(255,107,53,.12);color:var(--video)}
+.ti-audio{background:rgba(168,85,247,.12);color:var(--audio)}
+.ti-image{background:rgba(0,212,255,.1);color:var(--image)}
+.ti-archive{background:rgba(245,158,11,.1);color:var(--archive)}
+.ti-pdf{background:rgba(255,71,87,.1);color:var(--pdf)}
+.ti-document{background:rgba(74,158,255,.1);color:var(--document)}
+.ti-code{background:rgba(46,213,115,.08);color:var(--code)}
+.ti-file,.ti-text{background:rgba(107,122,141,.1);color:var(--file)}
+
+/* ─── Anim ─── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .3s ease both}
+.stagger > *{animation:fadeIn .3s ease both}
+.stagger > *:nth-child(1){animation-delay:0ms}
+.stagger > *:nth-child(2){animation-delay:40ms}
+.stagger > *:nth-child(3){animation-delay:80ms}
+.stagger > *:nth-child(4){animation-delay:120ms}
+.stagger > *:nth-child(5){animation-delay:160ms}
+.stagger > *:nth-child(n+6){animation-delay:200ms}
+
+/* ─── Responsive ─── */
+@media(max-width:860px){
+  :root{--sidebar:0px}
+  .sidebar{transform:translateX(-240px);transition:transform .25s;width:240px}
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,.6)}
+  .main-content{margin-left:0;padding:16px}
+  .flash-wrap{margin-left:0}
+  .topnav-logo{width:auto;min-width:auto;border-right:none}
+  .topnav-search{display:none}
+  .menu-toggle{display:flex!important}
+}
+.menu-toggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);cursor:pointer;font-size:1.1rem}
+
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+.form-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.86rem;color:var(--text2)}
+.form-check input{width:auto;cursor:pointer}
+.help-text{font-size:.74rem;color:var(--text3);margin-top:4px}
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+<!-- Top Nav -->
+<nav class="topnav">
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+  <div class="topnav-logo">Media<span class="dot">Vault</span> <span style="font-size:.6rem;background:var(--gold3);color:var(--gold);padding:1px 6px;border-radius:4px;font-weight:700;border:1px solid rgba(232,168,56,.3)">PRO</span></div>
+  <div class="topnav-search">
+    <span class="si">⌕</span>
+    <input type="text" id="globalSearch" placeholder="Search files..." autocomplete="off">
+  </div>
+  <div class="topnav-actions">
+    {% if current_user %}
+      <a href="/public" class="topnav-link">🌐 Gallery</a>
+      {% if current_user.is_admin %}<a href="/admin" class="topnav-link" style="color:var(--gold)">⚙ Admin</a>{% endif %}
+      <a href="/upload" class="btn btn-gold btn-sm" style="display:none" id="uploadBtn">+ Upload</a>
+      <div class="user-menu">
+        <div class="user-avatar" style="background:{{ current_user.avatar_color }};font-size:.82rem">
+          {{ current_user.username[0].upper() }}{{ current_user.username[1].upper() if current_user.username|length > 1 else '' }}
+        </div>
+        <div class="user-dropdown">
+          <div class="ud-header">
+            <div class="ud-name">{{ current_user.username }}</div>
+            <div class="ud-email">{{ current_user.email }}</div>
+            {% if current_user.is_admin %}<div style="font-size:.7rem;color:var(--gold);margin-top:3px;font-weight:700">⚑ Administrator</div>{% endif %}
+          </div>
+          <a href="/profile" class="ud-item">👤 My Profile</a>
+          <a href="/dashboard" class="ud-item">📊 Dashboard</a>
+          <a href="/settings" class="ud-item">⚙ Settings</a>
+          <div class="ud-sep"></div>
+          <a href="/logout" class="ud-item danger">↩ Logout</a>
+        </div>
+      </div>
+    {% else %}
+      <a href="/public" class="topnav-link">🌐 Gallery</a>
+      <a href="/login" class="btn btn-outline btn-sm">Login</a>
+      <a href="/register" class="btn btn-gold btn-sm">Register</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-wrap">
+  {% for cat, msg in messages %}
+  <div class="flash flash-{{ cat }}">
+    {% if cat=='success' %}✓{% elif cat=='error' %}✗{% elif cat=='warning' %}⚠{% else %}ℹ{% endif %}
+    {{ msg }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="layout">
+  {% if current_user %}
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Files</div>
+      <a href="/" class="sb-link {% if request.endpoint=='index' and not request.args.get('starred') and not request.args.get('type') and not request.args.get('folder') %}active{% endif %}">
+        <span class="icon">◈</span> All Files
+      </a>
+      <a href="/?starred=1" class="sb-link {% if request.args.get('starred') %}active{% endif %}">
+        <span class="icon">★</span> Starred
+      </a>
+      <a href="/?type=video" class="sb-link {% if request.args.get('type')=='video' %}active{% endif %}">
+        <span class="icon" style="color:var(--video)">▶</span> Videos
+      </a>
+      <a href="/?type=audio" class="sb-link {% if request.args.get('type')=='audio' %}active{% endif %}">
+        <span class="icon" style="color:var(--audio)">♫</span> Audio
+      </a>
+      <a href="/?type=image" class="sb-link {% if request.args.get('type')=='image' %}active{% endif %}">
+        <span class="icon" style="color:var(--image)">◉</span> Images
+      </a>
+      <a href="/?type=archive" class="sb-link {% if request.args.get('type')=='archive' %}active{% endif %}">
+        <span class="icon" style="color:var(--archive)">⊞</span> Archives
+      </a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Platform</div>
+      <a href="/dashboard" class="sb-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+        <span class="icon">◈</span> Dashboard
+      </a>
+      <a href="/public" class="sb-link {% if request.endpoint=='public_gallery' %}active{% endif %}">
+        <span class="icon">🌐</span> Public Gallery
+      </a>
+      <a href="/profile" class="sb-link {% if request.endpoint=='profile' %}active{% endif %}">
+        <span class="icon">👤</span> Profile
+      </a>
+      <a href="/settings" class="sb-link {% if request.endpoint=='settings' %}active{% endif %}">
+        <span class="icon">⚙</span> Settings
+      </a>
+      {% if current_user.is_admin %}
+      <a href="/admin" class="sb-link {% if request.endpoint=='admin_panel' %}active{% endif %}" style="color:var(--gold)">
+        <span class="icon">⚑</span> Admin Panel
+      </a>
+      {% endif %}
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">API</div>
+      <a href="/api/files" target="_blank" class="sb-link">
+        <span class="icon">⟨/⟩</span> API Explorer
+      </a>
+    </div>
+    <div class="sidebar-quota">
+      <div class="sq-label">
+        <span>Storage</span>
+        <span>{{ fmt_size(current_user._storage_used) }} / {{ fmt_size(current_user._quota_bytes) }}</span>
+      </div>
+      <div class="sq-bar">
+        <div class="sq-fill {% if current_user._quota_pct > 80 %}warning{% endif %}" style="width:{{ current_user._quota_pct }}%"></div>
+      </div>
+      <div style="font-size:.7rem;color:var(--text3);margin-top:4px;">{{ current_user._quota_pct }}% used</div>
+    </div>
+  </aside>
+  {% endif %}
+
+  <main class="main-content {% if not current_user %}no-sidebar{% endif %}">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.className = `toast t-${type} show`;
+  t.textContent = msg;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function copyText(txt, el) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const old = el.textContent;
+    el.textContent = '✓ Copied!';
+    el.style.background = 'var(--green)'; el.style.color = '#000';
+    setTimeout(() => { el.textContent = old; el.style.background=''; el.style.color=''; }, 2000);
+    showToast('Copied to clipboard!');
+  });
+}
+// Global search — redirect to index with query
+const gs = document.getElementById('globalSearch');
+if (gs) {
+  gs.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && gs.value.trim()) {
+      window.location = '/?q=' + encodeURIComponent(gs.value.trim());
+    }
+  });
+}
+// Close sidebar on outside click (mobile)
+document.addEventListener('click', e => {
+  const sb = document.getElementById('sidebar');
+  if (sb && !sb.contains(e.target) && !e.target.closest('.menu-toggle')) {
+    sb.classList.remove('open');
+  }
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — MediaVault Pro{% endblock %}
+{% block extra_css %}
+<style>
+.stat-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+@media(max-width:900px){.stat-grid4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.stat-grid4{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::after{content:attr(data-icon);position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:2rem;opacity:.07;pointer-events:none}
+.sc-num{font-size:1.8rem;font-weight:800;line-height:1;display:block;font-family:'Outfit',sans-serif}
+.sc-lbl{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-top:6px;display:block}
+.sc-sub{font-size:.72rem;margin-top:3px}
+.quota-card{grid-column:span 2}
+@media(max-width:900px){.quota-card{grid-column:span 1}}
+.quota-bar{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;margin:10px 0 6px}
+.quota-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .6s}
+.quota-fill.warn{background:linear-gradient(90deg,#FF6B35,#FF4757)}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.three-col{grid-template-columns:1fr}}
+
+/* Bar chart */
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:.75rem;color:var(--text2);width:70px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.bar-val{font-size:.72rem;color:var(--text3);width:40px;text-align:right;flex-shrink:0}
+
+/* Activity feed */
+.activity-feed{display:flex;flex-direction:column;gap:0}
+.act-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.act-item:last-child{border-bottom:none}
+.act-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;background:var(--bg2)}
+.act-detail{flex:1;min-width:0}
+.act-action{font-size:.82rem;font-weight:600}
+.act-file{font-size:.76rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-time{font-size:.7rem;color:var(--text3);flex-shrink:0;white-space:nowrap}
+
+/* Type list */
+.type-list{display:flex;flex-direction:column;gap:10px}
+.type-row{display:flex;align-items:center;gap:10px}
+.type-icon2{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.type-name{font-size:.82rem;font-weight:500;flex:1}
+
+/* Top files */
+.top-file{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.top-file:last-child{border-bottom:none}
+.top-rank{font-size:.7rem;color:var(--text3);width:18px;flex-shrink:0;text-align:center}
+.top-name{font-size:.82rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-stat{font-size:.74rem;color:var(--text2);flex-shrink:0}
+
+/* API section */
+.api-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.api-table tr{border-bottom:1px solid var(--border)}
+.api-table tr:last-child{border-bottom:none}
+.api-table td{padding:8px 10px}
+.api-table td:first-child{font-family:'JetBrains Mono',monospace;color:var(--blue);width:40%}
+.method-get{color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.72rem}
+.method-post{color:var(--gold);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.72rem}
+</style>
+{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+  <h1 style="font-size:1.3rem;font-weight:800">📊 Dashboard</h1>
+  <div style="font-size:.76rem;color:var(--text2)">Member since {{ fmt_date(user.created_at) }}</div>
+</div>
+
+<!-- Stat cards -->
+<div class="stat-grid4">
+  <div class="stat-card" data-icon="◈">
+    <span class="sc-num" style="color:var(--gold)">{{ total_files }}</span>
+    <span class="sc-lbl">Total Files</span>
+    <div class="sc-sub" style="color:var(--text3)">{{ total_size }} used</div>
+  </div>
+  <div class="stat-card" data-icon="⊙">
+    <span class="sc-num" style="color:var(--blue)">{{ total_views }}</span>
+    <span class="sc-lbl">Total Views</span>
+  </div>
+  <div class="stat-card" data-icon="↓">
+    <span class="sc-num" style="color:var(--green)">{{ total_dl }}</span>
+    <span class="sc-lbl">Downloads</span>
+  </div>
+  <div class="stat-card" data-icon="≋">
+    <span class="sc-num" style="color:var(--purple)">{{ total_bw }}</span>
+    <span class="sc-lbl">Bandwidth Served</span>
+  </div>
+</div>
+
+<!-- Quota -->
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header"><div class="card-title">💾 Storage Quota</div></div>
+  <div class="card-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:.84rem;font-weight:600">{{ fmt_size(used_bytes) }} used</span>
+      <span style="font-size:.78rem;color:var(--text2)">{{ fmt_size(quota_bytes) }} total · {{ [100,((used_bytes/quota_bytes*100)|int if quota_bytes else 0)]|min }}% used</span>
+    </div>
+    <div class="quota-bar">
+      <div class="quota-fill {% if (used_bytes/quota_bytes*100 if quota_bytes else 0) > 80 %}warn{% endif %}" style="width:{{ [100,((used_bytes/quota_bytes*100)|int if quota_bytes else 0)]|min }}%"></div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      {% for t, cnt in types.items() %}{% if cnt %}
+      <div style="font-size:.74rem;color:var(--text2)"><span class="badge badge-{{ t }}" style="margin-right:4px">{{ t }}</span>{{ cnt }}</div>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- Upload activity -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📅 Upload Activity (14 days)</div></div>
+    <div class="card-body">
+      {% if uploads_by_day %}
+      {% set max_day = ([uploads_by_day.values()|list + [1]]|first)|max %}
+      <div class="bar-chart">
+        {% for day, cnt in uploads_by_day.items() %}
+        <div class="bar-row">
+          <span class="bar-label">{{ day[5:] }}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:{{ (cnt / max_day * 100)|int }}%;background:var(--gold)"></div>
+          </div>
+          <span class="bar-val">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--text3);padding:30px;font-size:.84rem">No upload history yet</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- File types -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">🗂 File Types Breakdown</div></div>
+    <div class="card-body">
+      {% if types %}
+      {% set max_t = ([types.values()|list + [1]]|first)|max %}
+      <div class="type-list">
+        {% for t, cnt in types.items() %}{% if cnt %}
+        <div class="type-row">
+          <div class="type-icon2 ti-{{ t }}">
+            {% if t=='video' %}▶{% elif t=='audio' %}♫{% elif t=='image' %}◉{% elif t=='archive' %}⊞{% elif t=='code' %}⟨/⟩{% elif t=='pdf' %}📄{% elif t=='document' %}📝{% else %}⬡{% endif %}
+          </div>
+          <span class="type-name">{{ t|capitalize }}</span>
+          <div class="bar-track" style="width:80px">
+            <div class="bar-fill" style="width:{{ (cnt/max_t*100)|int }}%;background:var(--{{ t }})"></div>
+          </div>
+          <span class="bar-val">{{ cnt }}</span>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--text3);padding:30px;font-size:.84rem">No files yet</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- Top files -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🔥 Most Popular Files</div>
+      <a href="/?sort=popular" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div class="card-body">
+      {% for f in top_files %}
+      <div class="top-file">
+        <span class="top-rank">{{ loop.index }}</span>
+        <a href="/file/{{ f.id }}" class="top-name" style="color:var(--text)">{{ f.original_name }}</a>
+        <span class="badge badge-{{ f.type }}">{{ f.type }}</span>
+        <span class="top-stat">👁 {{ f.views or 0 }}  ↓ {{ f.downloads or 0 }}</span>
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--text3);padding:30px;font-size:.84rem">No data yet</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Activity feed -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">⚡ Recent Activity</div></div>
+    <div class="card-body">
+      <div class="activity-feed">
+        {% for act in activity %}
+        <div class="act-item">
+          <div class="act-icon">
+            {% if act.action=='upload' %}↑{% elif act.action=='delete' %}✗{% elif act.action=='rename' %}✎{% elif act.action=='view' %}⊙{% elif act.action=='login' %}→{% else %}⬡{% endif %}
+          </div>
+          <div class="act-detail">
+            <div class="act-action">{{ act.action|capitalize }}</div>
+            <div class="act-file">{{ act.detail }}</div>
+          </div>
+          <div class="act-time">{{ fmt_rel(act.at) }}</div>
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--text3);padding:30px;font-size:.84rem">No recent activity</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API Reference -->
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <div class="card-title">⟨/⟩ REST API Reference</div>
+    <div style="display:flex;gap:8px">
+      <a href="/api/files" target="_blank" class="btn btn-outline btn-sm">Try API</a>
+      <a href="/settings" class="btn btn-gold btn-sm">Get Token</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:.76rem;font-family:'JetBrains Mono',monospace;margin-bottom:12px;line-height:2;color:var(--text2)">
+      Authorization: Bearer <span style="color:var(--gold)">YOUR_API_TOKEN</span>
+    </div>
+    <table class="api-table">
+      <tr><td><span class="method-get">GET</span></td><td>/api/files</td><td style="color:var(--text2)">List all your files with URLs</td></tr>
+      <tr><td><span class="method-get">GET</span></td><td>/api/file/:id</td><td style="color:var(--text2)">Single file metadata + URLs</td></tr>
+      <tr><td><span class="method-post">POST</span></td><td>/api/upload</td><td style="color:var(--text2)">Upload file (multipart/form-data)</td></tr>
+      <tr><td><span class="method-get">GET</span></td><td>/raw/:id</td><td style="color:var(--text2)">Direct stream with HTTP Range</td></tr>
+      <tr><td><span class="method-get">GET</span></td><td>/download/:id</td><td style="color:var(--text2)">Force download with original name</td></tr>
+      <tr><td><span class="method-get">GET</span></td><td>/api/search?q=</td><td style="color:var(--text2)">Search files by name/description</td></tr>
+      <tr><td><span class="method-get">GET</span></td><td>/api/me</td><td style="color:var(--text2)">Your account info & stats</td></tr>
+    </table>
+    <div style="margin-top:12px;font-size:.76rem;font-family:'JetBrains Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text2)">
+      # Upload via curl<br>
+      <span style="color:var(--green)">curl</span> -X POST http://{{ local_ip }}:5000/api/upload \<br>
+      &nbsp; -H <span style="color:var(--gold)">"Authorization: Bearer YOUR_TOKEN"</span> \<br>
+      &nbsp; -F <span style="color:var(--gold)">"file=@/path/to/file.mp4"</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

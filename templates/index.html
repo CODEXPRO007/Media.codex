@@ -1,0 +1,515 @@
+{% extends 'base.html' %}
+{% block title %}My Files — MediaVault Pro{% endblock %}
+{% block extra_css %}
+<style>
+/* Upload Panel */
+.upload-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:22px}
+.upload-toggle{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;transition:background .18s}
+.upload-toggle:hover{background:var(--bg3)}
+.upload-toggle h3{font-size:.88rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+.upload-toggle .arrow{margin-left:auto;transition:transform .2s;color:var(--text3)}
+.upload-toggle.open .arrow{transform:rotate(180deg)}
+.upload-body{display:none;border-top:1px solid var(--border);padding:20px}
+.upload-body.open{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:800px){.upload-body.open{grid-template-columns:1fr}}
+
+/* Drop Zone */
+.drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;position:relative;transition:all .22s}
+.drop-zone:hover,.drop-zone.over{border-color:var(--gold);background:var(--gold3)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone .dz-icon{font-size:2.6rem;margin-bottom:10px;display:block}
+.drop-zone h3{font-size:.95rem;font-weight:700;margin-bottom:5px}
+.drop-zone p{font-size:.78rem;color:var(--text2);margin-bottom:14px}
+.progress-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:10px;display:none}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;width:0%;transition:width .1s}
+.progress-text{font-size:.74rem;color:var(--text2);margin-top:6px;display:none}
+
+/* Stats strip */
+.stats-strip{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:20px}
+@media(max-width:1200px){.stats-strip{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:600px){.stats-strip{grid-template-columns:repeat(2,1fr)}}
+.stat-pill{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;cursor:pointer;transition:all .18s}
+.stat-pill:hover,.stat-pill.active{border-color:var(--gold);background:var(--gold3)}
+.stat-pill .sn{font-size:1.2rem;font-weight:800;display:block;line-height:1.1}
+.stat-pill .sl{font-size:.66rem;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+
+/* Controls bar */
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:200px;position:relative}
+.search-wrap input{padding-left:34px}
+.search-wrap .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.sel-sort{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:8px 12px;border-radius:8px;font-size:.82rem;font-family:'Outfit',sans-serif;cursor:pointer;min-width:120px}
+.active-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filter-tag{display:flex;align-items:center;gap:5px;background:var(--gold3);border:1px solid rgba(232,168,56,.25);color:var(--gold);padding:3px 10px;border-radius:20px;font-size:.76rem;font-weight:600}
+.filter-tag a{color:var(--gold);font-size:.9rem;line-height:1}
+
+/* File grid */
+.files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.file-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s;position:relative;animation:fadeIn .25s ease both}
+.file-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.35)}
+.file-card.selected{border-color:var(--gold);background:var(--gold3)}
+.file-thumb{width:100%;aspect-ratio:16/10;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;cursor:pointer}
+.file-thumb img{width:100%;height:100%;object-fit:cover}
+.file-thumb .ti{font-size:2.2rem}
+.thumb-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;gap:6px;opacity:0;transition:opacity .18s}
+.file-card:hover .thumb-overlay{opacity:1}
+.thumb-btn{background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:5px 11px;font-size:.76rem;font-weight:600;cursor:pointer;transition:background .15s}
+.thumb-btn:hover{background:rgba(255,255,255,.2)}
+.file-info{padding:11px 13px}
+.file-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:var(--text);margin-bottom:5px}
+.file-meta{display:flex;align-items:center;justify-content:space-between;gap:5px}
+.file-size-date{font-size:.71rem;color:var(--text3)}
+.file-actions-row{display:flex;gap:4px;padding:8px 10px;border-top:1px solid var(--border);background:var(--bg2)}
+.fa-btn{flex:1;text-align:center;padding:5px;border-radius:6px;font-size:.72rem;color:var(--text2);cursor:pointer;transition:all .15s;background:transparent}
+.fa-btn:hover{background:var(--bg3);color:var(--text)}
+.fa-btn.active{color:var(--gold)}
+.fa-btn.danger:hover{color:var(--red)}
+
+/* Public badge */
+.public-badge{position:absolute;top:6px;right:6px;background:rgba(46,213,115,.85);color:#000;font-size:.62rem;font-weight:800;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+.private-badge{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.65);color:var(--text2);font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:4px}
+.star-badge{position:absolute;top:6px;left:6px;font-size:.9rem}
+
+/* Checkbox select */
+.sel-cb{position:absolute;top:8px;left:8px;z-index:2;display:none}
+.file-card.select-mode .sel-cb{display:block}
+.sel-cb input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer}
+
+/* Bulk bar */
+.bulk-bar{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--card2);border:1px solid var(--border2);border-radius:12px;
+  padding:12px 20px;box-shadow:0 16px 60px rgba(0,0,0,.6);align-items:center;gap:12px;z-index:200;backdrop-filter:blur(20px);white-space:nowrap}
+.bulk-bar.show{display:flex}
+
+/* Folder pills */
+.folder-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.folder-pill{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:4px 14px;border-radius:20px;font-size:.78rem;cursor:pointer;transition:all .18s}
+.folder-pill:hover,.folder-pill.active{border-color:var(--gold);color:var(--gold);background:var(--gold3)}
+
+/* Empty */
+.empty{text-align:center;padding:80px 20px}
+.empty .ei{font-size:3.5rem;opacity:.3;display:block;margin-bottom:14px}
+.empty h3{font-size:1rem;color:var(--text2);margin-bottom:6px}
+.empty p{font-size:.82rem;color:var(--text3)}
+
+/* Quick preview modal */
+.preview-modal .modal{max-width:800px;padding:0;background:var(--bg);overflow:hidden}
+.preview-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Upload Panel -->
+<div class="upload-panel">
+  <div class="upload-toggle" id="uploadToggle" onclick="toggleUpload()">
+    <span style="color:var(--gold);font-size:1.1rem">⊕</span>
+    <h3>Upload Files</h3>
+    <span class="arrow">▾</span>
+  </div>
+  <div class="upload-body" id="uploadBody">
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+      <div class="drop-zone" id="dropZone">
+        <span class="dz-icon">⬆</span>
+        <h3>Drop files here or click to browse</h3>
+        <p>Video · Audio · Image · Archive · Any file — max 10 GB</p>
+        <button type="button" class="btn btn-gold" style="position:relative;z-index:1;pointer-events:none">Choose Files</button>
+        <input type="file" name="file" id="fileInput" multiple>
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText"></div>
+      </div>
+    </form>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="form-group"><label>Description</label><input type="text" name="description" form="uploadForm" placeholder="Optional description..."></div>
+      <div class="form-group"><label>Tags</label><input type="text" name="tags" form="uploadForm" placeholder="tag1, tag2, tag3"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Folder</label>
+          <input type="text" name="folder" form="uploadForm" placeholder="e.g. Projects" list="folder-list">
+          <datalist id="folder-list">{% for f in folders %}<option value="{{ f }}">{% endfor %}</datalist>
+        </div>
+        <div class="form-group">
+          <label>Expires In (days, 0=never)</label>
+          <input type="number" name="expires_days" form="uploadForm" placeholder="0" min="0" max="3650">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>File Password (optional)</label>
+        <input type="password" name="file_password" form="uploadForm" placeholder="Leave blank for no password">
+      </div>
+      <label class="form-check"><input type="checkbox" name="is_public" value="1" form="uploadForm"> Make file publicly visible</label>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+        <button form="uploadForm" type="submit" class="btn btn-gold btn-lg" id="uploadBtn">↑ Upload</button>
+        <span style="font-size:.75rem;color:var(--text3)" id="fileCount"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Strip -->
+<div class="stats-strip">
+  <a href="/" class="stat-pill {% if not ftype and not show_starred %}active{% endif %}">
+    <span class="sn" style="color:var(--gold)">{{ total_files }}</span>
+    <span class="sl">All Files</span>
+  </a>
+  <a href="/?type=video" class="stat-pill {% if ftype=='video' %}active{% endif %}">
+    <span class="sn" style="color:var(--video)">{{ type_counts.video }}</span>
+    <span class="sl">▶ Video</span>
+  </a>
+  <a href="/?type=audio" class="stat-pill {% if ftype=='audio' %}active{% endif %}">
+    <span class="sn" style="color:var(--audio)">{{ type_counts.audio }}</span>
+    <span class="sl">♫ Audio</span>
+  </a>
+  <a href="/?type=image" class="stat-pill {% if ftype=='image' %}active{% endif %}">
+    <span class="sn" style="color:var(--image)">{{ type_counts.image }}</span>
+    <span class="sl">◉ Image</span>
+  </a>
+  <a href="/?type=archive" class="stat-pill {% if ftype=='archive' %}active{% endif %}">
+    <span class="sn" style="color:var(--archive)">{{ type_counts.archive }}</span>
+    <span class="sl">⊞ Archive</span>
+  </a>
+  <a href="/?starred=1" class="stat-pill {% if show_starred %}active{% endif %}">
+    <span class="sn" style="color:var(--gold)">★</span>
+    <span class="sl">Starred</span>
+  </a>
+  <div class="stat-pill" style="cursor:default">
+    <span class="sn" style="font-size:.85rem;color:var(--text2)">{{ total_size }}</span>
+    <span class="sl">Used</span>
+  </div>
+  <div class="stat-pill" style="cursor:default">
+    <span class="sn" style="font-size:.85rem;color:var(--text2)">{{ folders|length }}</span>
+    <span class="sl">Folders</span>
+  </div>
+</div>
+
+<!-- Folders -->
+{% if folders %}
+<div class="folder-pills">
+  <a href="/" class="folder-pill {% if not folder %}active{% endif %}">⊞ All</a>
+  {% for f in folders %}
+  <a href="/?folder={{ f }}" class="folder-pill {% if folder==f %}active{% endif %}">📁 {{ f }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Controls -->
+<div class="controls">
+  <div class="search-wrap">
+    <span class="si">⌕</span>
+    <input type="text" id="searchInput" placeholder="Search in my files..." value="{{ q }}" autocomplete="off">
+  </div>
+  <select class="sel-sort" id="sortSel" onchange="applySort()">
+    <option value="newest" {% if sort=='newest' %}selected{% endif %}>↓ Newest</option>
+    <option value="oldest" {% if sort=='oldest' %}selected{% endif %}>↑ Oldest</option>
+    <option value="size_desc" {% if sort=='size_desc' %}selected{% endif %}>↓ Largest</option>
+    <option value="size_asc" {% if sort=='size_asc' %}selected{% endif %}>↑ Smallest</option>
+    <option value="name" {% if sort=='name' %}selected{% endif %}>A–Z Name</option>
+    <option value="popular" {% if sort=='popular' %}selected{% endif %}>🔥 Popular</option>
+  </select>
+  <button class="btn btn-outline btn-sm" onclick="toggleSelectMode()" id="selectBtn">☐ Select</button>
+  <button class="btn btn-outline btn-sm" onclick="document.getElementById('gridView').style.display='';document.getElementById('listView').style.display='none'">⊞</button>
+  <button class="btn btn-outline btn-sm" onclick="document.getElementById('listView').style.display='';document.getElementById('gridView').style.display='none'">☰</button>
+</div>
+
+<!-- Active filters -->
+{% if q or ftype or folder or show_starred %}
+<div class="active-filters">
+  {% if q %}<div class="filter-tag">Search: "{{ q }}" <a href="{{ request.path }}">×</a></div>{% endif %}
+  {% if ftype %}<div class="filter-tag">Type: {{ ftype }} <a href="/?q={{ q }}&sort={{ sort }}">×</a></div>{% endif %}
+  {% if folder %}<div class="filter-tag">📁 {{ folder }} <a href="/?q={{ q }}&type={{ ftype }}&sort={{ sort }}">×</a></div>{% endif %}
+  {% if show_starred %}<div class="filter-tag">★ Starred <a href="/?q={{ q }}&type={{ ftype }}&sort={{ sort }}">×</a></div>{% endif %}
+  <a href="/" class="filter-tag" style="background:rgba(255,71,87,.1);border-color:rgba(255,71,87,.2);color:var(--red)">✗ Clear All</a>
+</div>
+{% endif %}
+
+{% if files %}
+<form id="bulkForm" action="/bulk-delete" method="post">
+<!-- GRID VIEW -->
+<div id="gridView">
+<div class="files-grid stagger" id="filesGrid">
+  {% for f in files %}
+  <div class="file-card" data-id="{{ f.id }}" data-name="{{ f.original_name|lower }}">
+    <div class="sel-cb"><input type="checkbox" name="selected_ids" value="{{ f.id }}" onchange="updateBulk()"></div>
+    {% if f.is_starred %}<div class="star-badge">★</div>{% endif %}
+    {% if f.is_public %}<div class="public-badge">Public</div>{% elif not f.is_public %}<div class="private-badge">🔒</div>{% endif %}
+
+    <div class="file-thumb" onclick="location.href='/file/{{ f.id }}'">
+      {% if f.type == 'image' %}
+        <img src="/raw/{{ f.id }}" alt="{{ f.original_name }}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=ti style=color:var(--image)>◉</span>'">
+      {% elif f.type == 'video' %}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:2.2rem;color:var(--video)">▶</span>
+          <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,107,53,.85);display:flex;align-items:center;justify-content:center">
+            <span style="color:#fff;margin-left:3px;font-size:.8rem">▶</span>
+          </div>
+        </div>
+      {% elif f.type == 'audio' %}
+        <span class="ti" style="color:var(--audio)">♫</span>
+      {% elif f.type == 'archive' %}
+        <span class="ti" style="color:var(--archive)">⊞</span>
+      {% elif f.type == 'pdf' %}
+        <span class="ti" style="color:var(--pdf)">📄</span>
+      {% elif f.type == 'code' %}
+        <span class="ti" style="color:var(--code)">⟨/⟩</span>
+      {% elif f.type == 'document' %}
+        <span class="ti" style="color:var(--document)">📝</span>
+      {% else %}
+        <span class="ti" style="color:var(--text3)">⬡</span>
+      {% endif %}
+      <div class="thumb-overlay">
+        <a href="/file/{{ f.id }}" class="thumb-btn">View</a>
+        <a href="/download/{{ f.id }}" class="thumb-btn">↓</a>
+      </div>
+    </div>
+
+    <div class="file-info">
+      <a href="/file/{{ f.id }}" class="file-name" title="{{ f.original_name }}">{{ f.original_name }}</a>
+      <div class="file-meta">
+        <span class="file-size-date">{{ fmt_size(f.size) }}</span>
+        <span class="badge badge-{{ f.type }}">{{ f.type }}</span>
+      </div>
+      {% if f.folder %}<div style="font-size:.7rem;color:var(--text3);margin-top:3px">📁 {{ f.folder }}</div>{% endif %}
+      {% if f.expires_at %}
+      <div style="font-size:.68rem;color:var(--red);margin-top:3px">⏱ Expires {{ fmt_rel(f.expires_at) }}</div>
+      {% endif %}
+    </div>
+    <div class="file-actions-row">
+      <button class="fa-btn {% if f.is_starred %}active{% endif %}" onclick="toggleStar('{{ f.id }}',this)" title="Star">★</button>
+      <button class="fa-btn" onclick="copyText('/raw/{{ f.id }}',this)" title="Copy URL">⎘</button>
+      <a href="/file/{{ f.id }}" class="fa-btn" title="View">⊙</a>
+      <a href="/download/{{ f.id }}" class="fa-btn" title="Download">↓</a>
+      <button class="fa-btn danger" onclick="confirmDelete('{{ f.id }}','{{ f.original_name|replace("'","") }}')" title="Delete">✗</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+</div>
+
+<!-- LIST VIEW -->
+<div id="listView" style="display:none">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:.84rem">
+      <thead>
+        <tr style="background:var(--bg2);border-bottom:1px solid var(--border)">
+          <th style="padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)"><input type="checkbox" onchange="selectAll(this.checked)"></th>
+          <th style="padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Name</th>
+          <th style="padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Type</th>
+          <th style="padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Size</th>
+          <th style="padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Uploaded</th>
+          <th style="padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Status</th>
+          <th style="padding:10px 14px;text-align:right;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in files %}
+        <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+          <td style="padding:10px 14px"><input type="checkbox" name="selected_ids" value="{{ f.id }}" onchange="updateBulk()" form="bulkForm"></td>
+          <td style="padding:10px 14px">
+            <a href="/file/{{ f.id }}" style="color:var(--text);font-weight:500;display:flex;align-items:center;gap:8px">
+              <span class="badge badge-{{ f.type }}" style="padding:3px 8px;min-width:20px;justify-content:center">
+                {% if f.type=='video' %}▶{% elif f.type=='audio' %}♫{% elif f.type=='image' %}◉{% elif f.type=='archive' %}⊞{% elif f.type=='code' %}⟨/⟩{% else %}⬡{% endif %}
+              </span>
+              {{ f.original_name }}
+              {% if f.is_starred %} <span style="color:var(--gold)">★</span>{% endif %}
+              {% if f.file_password %} <span style="color:var(--text3);font-size:.75rem">🔒</span>{% endif %}
+            </a>
+            {% if f.folder %}<div style="font-size:.7rem;color:var(--text3);margin-top:2px;padding-left:32px">📁 {{ f.folder }}</div>{% endif %}
+          </td>
+          <td style="padding:10px 14px"><span class="badge badge-{{ f.type }}">{{ f.type }}</span></td>
+          <td style="padding:10px 14px;color:var(--text2);font-size:.8rem">{{ fmt_size(f.size) }}</td>
+          <td style="padding:10px 14px;color:var(--text3);font-size:.78rem">{{ fmt_rel(f.uploaded_at) }}</td>
+          <td style="padding:10px 14px">
+            {% if f.is_public %}<span class="badge" style="background:rgba(46,213,115,.1);color:var(--green);border-color:rgba(46,213,115,.2)">🌐 Public</span>
+            {% else %}<span class="badge badge-file">🔒 Private</span>{% endif %}
+          </td>
+          <td style="padding:10px 14px;text-align:right;white-space:nowrap">
+            <a href="/file/{{ f.id }}" class="btn btn-outline btn-sm">View</a>
+            <a href="/download/{{ f.id }}" class="btn btn-outline btn-sm">↓</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Bulk Action Bar -->
+<div class="bulk-bar" id="bulkBar">
+  <span style="color:var(--text2);font-size:.84rem"><strong id="bulkCount" style="color:var(--gold)">0</strong> selected</span>
+  <button type="submit" class="btn btn-red btn-sm" onclick="return confirm('Delete selected files?')">✗ Delete</button>
+  <button type="button" class="btn btn-outline btn-sm" onclick="showMoveModal()">📁 Move</button>
+  <button type="button" class="btn btn-blue btn-sm" onclick="multiDownload()">↓ Download ZIP</button>
+  <button type="button" class="btn btn-outline btn-sm" onclick="cancelSelect()">Cancel</button>
+</div>
+</form>
+
+{% else %}
+<div class="empty fade-in">
+  <span class="ei">📭</span>
+  <h3>{% if q %}No results for "{{ q }}"{% elif show_starred %}No starred files yet{% elif folder %}No files in "{{ folder }}"{% else %}No files yet{% endif %}</h3>
+  <p>{% if not q and not show_starred and not folder %}Upload your first file above to get started.{% endif %}</p>
+</div>
+{% endif %}
+
+<!-- Move to Folder Modal -->
+<div class="modal-bg" id="moveModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">📁 Move to Folder</div>
+    <form id="moveForm" action="/bulk-move" method="post">
+      <div id="moveHiddenIds"></div>
+      <div class="form-group">
+        <label>Target Folder (blank = root)</label>
+        <input type="text" name="target_folder" placeholder="Folder name..." list="folder-list2">
+        <datalist id="folder-list2">{% for f in folders %}<option value="{{ f }}">{% endfor %}</datalist>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-gold">Move</button>
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('moveModal').classList.remove('open')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete confirm form (hidden) -->
+<form id="deleteForm" method="post" style="display:none"></form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Upload toggle
+function toggleUpload() {
+  const body = document.getElementById('uploadBody');
+  const toggle = document.getElementById('uploadToggle');
+  body.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+// Drag & Drop
+const dz = document.getElementById('dropZone');
+const fi = document.getElementById('fileInput');
+const fc = document.getElementById('fileCount');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); fi.files = e.dataTransfer.files; updateCount(); });
+fi.addEventListener('change', updateCount);
+function updateCount() {
+  const n = fi.files.length;
+  fc.textContent = n ? `${n} file${n>1?'s':''} selected` : '';
+}
+
+// XHR Upload with progress
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!fi.files.length) { showToast('Select a file first', 'error'); return; }
+  const fd = new FormData(this);
+  const xhr = new XMLHttpRequest();
+  const pb = document.getElementById('progressBar');
+  const pf = document.getElementById('progressFill');
+  const pt = document.getElementById('progressText');
+  const btn = document.getElementById('uploadBtn');
+  pb.style.display = 'block'; pt.style.display = 'block'; btn.disabled = true; btn.textContent = 'Uploading...';
+  xhr.upload.addEventListener('progress', e => {
+    if (e.lengthComputable) {
+      const pct = Math.round(e.loaded/e.total*100);
+      pf.style.width = pct+'%';
+      pt.textContent = `${pct}% — ${fmtB(e.loaded)} / ${fmtB(e.total)}`;
+    }
+  });
+  xhr.addEventListener('load', () => {
+    if (xhr.status < 400) {
+      const loc = xhr.getResponseHeader('Location');
+      window.location = loc || '/';
+    } else {
+      btn.disabled = false; btn.textContent = '↑ Upload'; pb.style.display = 'none';
+      showToast('Upload failed', 'error');
+    }
+  });
+  xhr.open('POST', '/upload');
+  xhr.send(fd);
+});
+
+function fmtB(b) {
+  if (b < 1024) return b+' B';
+  if (b < 1048576) return (b/1024).toFixed(1)+' KB';
+  if (b < 1073741824) return (b/1048576).toFixed(1)+' MB';
+  return (b/1073741824).toFixed(2)+' GB';
+}
+
+// Live search
+let st;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(st);
+  const q = this.value.toLowerCase();
+  st = setTimeout(() => {
+    document.querySelectorAll('.file-card').forEach(c => {
+      c.style.display = (!q || c.dataset.name.includes(q)) ? '' : 'none';
+    });
+  }, 150);
+});
+
+function applySort() {
+  const s = document.getElementById('sortSel').value;
+  const url = new URL(window.location);
+  url.searchParams.set('sort', s);
+  window.location = url;
+}
+
+// Select mode
+let selectMode = false;
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  document.querySelectorAll('.file-card').forEach(c => c.classList.toggle('select-mode', selectMode));
+  document.getElementById('selectBtn').textContent = selectMode ? '✗ Cancel' : '☐ Select';
+  if (!selectMode) { document.getElementById('bulkBar').classList.remove('show'); document.querySelectorAll('[name=selected_ids]').forEach(c => c.checked=false); }
+}
+function cancelSelect() { selectMode = false; toggleSelectMode(); }
+function updateBulk() {
+  const n = document.querySelectorAll('[name=selected_ids]:checked').length;
+  document.getElementById('bulkCount').textContent = n;
+  document.getElementById('bulkBar').classList.toggle('show', n > 0);
+}
+function selectAll(checked) {
+  document.querySelectorAll('[name=selected_ids]').forEach(c => { c.checked = checked; });
+  updateBulk();
+}
+function showMoveModal() {
+  const ids = [...document.querySelectorAll('[name=selected_ids]:checked')].map(c=>c.value);
+  const container = document.getElementById('moveHiddenIds');
+  container.innerHTML = ids.map(id=>`<input type="hidden" name="selected_ids" value="${id}">`).join('');
+  document.getElementById('moveModal').classList.add('open');
+}
+function multiDownload() {
+  const form = document.createElement('form');
+  form.method = 'post'; form.action = '/multi-download';
+  document.querySelectorAll('[name=selected_ids]:checked').forEach(c => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'selected_ids'; inp.value = c.value;
+    form.appendChild(inp);
+  });
+  document.body.appendChild(form); form.submit(); document.body.removeChild(form);
+}
+
+// Star
+async function toggleStar(fid, btn) {
+  const r = await fetch(`/star/${fid}`, {method:'POST'});
+  const d = await r.json();
+  btn.classList.toggle('active', d.starred);
+  showToast(d.msg);
+}
+
+// Delete
+function confirmDelete(fid, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+  const f = document.getElementById('deleteForm');
+  f.action = `/delete/${fid}`; f.submit();
+}
+
+// Copy URL
+function copyText(url, el) {
+  const full = url.startsWith('http') ? url : window.location.origin + url;
+  navigator.clipboard.writeText(full).then(() => {
+    showToast('URL copied!');
+    if (el) { const old = el.textContent; el.textContent = '✓'; setTimeout(()=>el.textContent=old,1500); }
+  });
+}
+</script>
+{% endblock %}

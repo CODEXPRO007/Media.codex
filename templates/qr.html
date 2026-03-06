@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}QR Code — {{ f.original_name }}{% endblock %}
+{% block content %}
+<div style="max-width:460px;margin:0 auto;text-align:center;padding:30px 0">
+  <a href="/file/{{ fid }}" class="btn btn-outline btn-sm" style="margin-bottom:20px">← Back to File</a>
+  <div class="card" style="padding:32px;margin-top:10px">
+    <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:6px">⎗ QR Code</h2>
+    <p style="font-size:.78rem;color:var(--text2);margin-bottom:20px">{{ f.original_name }}</p>
+    <div id="qrcode" style="display:flex;justify-content:center;margin-bottom:18px"></div>
+    <div class="url-box" style="margin-bottom:14px">
+      <input type="text" value="{{ url }}" readonly>
+      <button class="copy-btn" onclick="copyText('{{ url }}',this)">⎘ Copy</button>
+    </div>
+    <p style="font-size:.74rem;color:var(--text3)">Scan with any phone camera to open this file</p>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+new QRCode(document.getElementById('qrcode'),{
+  text:'{{ url }}',width:200,height:200,
+  colorDark:'#E8A838',colorLight:'#0A0D14',
+  correctLevel:QRCode.CorrectLevel.H
+});
+</script>
+{% endblock %}

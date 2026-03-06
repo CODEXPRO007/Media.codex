@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% block title %}{{ f.original_name }} — MediaVault Pro{% endblock %}
+{% block extra_css %}
+<style>
+.file-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+@media(max-width:1000px){.file-layout{grid-template-columns:1fr}}
+.preview-box{background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--border);min-height:180px}
+.preview-box video{width:100%;max-height:70vh;display:block;background:#000}
+.preview-box audio{width:100%;background:var(--bg2);padding:24px}
+.preview-box img{width:100%;max-height:80vh;object-fit:contain;display:block;background:var(--bg2)}
+.no-prev{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px}
+.sidebar-stack{display:flex;flex-direction:column;gap:14px}
+.meta-table{width:100%;border-collapse:collapse}
+.meta-table tr{border-bottom:1px solid var(--border)}
+.meta-table tr:last-child{border-bottom:none}
+.meta-table td{padding:8px 0;font-size:.82rem;vertical-align:top}
+.meta-table td:first-child{color:var(--text2);width:40%;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding-right:10px}
+.actions-list{display:flex;flex-direction:column;gap:8px}
+.actions-list .btn{justify-content:center}
+.url-row{margin-bottom:12px}
+.url-label-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:.73rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.dot-green{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.dot-blue{width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.dot-gold{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.archive-tbl{width:100%;border-collapse:collapse;font-size:.78rem}
+.archive-tbl th{text-align:left;padding:6px 8px;color:var(--text3);border-bottom:1px solid var(--border);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+.archive-tbl td{padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2)}
+.archive-tbl tr:last-child td{border-bottom:none}
+.archive-tbl td:first-child{color:var(--text)}
+.rename-hist{display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto}
+.rh-item{font-size:.74rem;color:var(--text2);padding:5px 8px;background:var(--bg2);border-radius:6px}
+.rh-from{color:var(--text3)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-mini{background:var(--bg2);border-radius:8px;padding:12px;text-align:center}
+.stat-mini .sn{font-size:1.3rem;font-weight:800;display:block;font-family:'Outfit',sans-serif}
+.stat-mini .sl{font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.embed-code{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--text2);white-space:pre-wrap;word-break:break-all;resize:vertical;width:100%;min-height:80px;outline:none}
+.tag-pill{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:20px;font-size:.74rem;display:inline-block;margin:2px}
+.net-info{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:.76rem;line-height:1.9}
+.net-info strong{color:var(--text)}
+.net-info a{color:var(--blue)}
+.toggle-section{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.toggle-section .arr{transition:transform .2s;color:var(--text3)}
+.toggle-section.open .arr{transform:rotate(180deg)}
+.section-body{display:none;padding-top:14px}
+.section-body.open{display:block}
+.exp-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.2);color:var(--red);padding:4px 10px;border-radius:6px;font-size:.76rem}
+</style>
+{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+  <a href="/" class="btn btn-outline btn-sm">← Back</a>
+  <h1 style="font-size:1rem;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ f.original_name }}">
+    {{ f.original_name }}
+  </h1>
+  <span class="badge badge-{{ f.type }}">{{ f.type }}</span>
+  {% if f.is_public %}<span class="badge" style="background:rgba(46,213,115,.1);color:var(--green);border-color:rgba(46,213,115,.2)">🌐 Public</span>{% endif %}
+  {% if f.is_starred %}<span style="color:var(--gold);font-size:1rem">★</span>{% endif %}
+  {% if f.expires_at %}<span class="exp-badge">⏱ Expires {{ fmt_rel(f.expires_at) }}</span>{% endif %}
+</div>
+
+<div class="file-layout">
+  <!-- PREVIEW -->
+  <div>
+    <div class="preview-box">
+      {% if f.type == 'video' %}
+        <video controls autoplay preload="metadata" id="player">
+          <source src="/raw/{{ f.id }}" type="{{ f.mime }}">
+          Your browser doesn't support this video format.
+        </video>
+      {% elif f.type == 'audio' %}
+        <div style="background:var(--bg2);padding:40px 30px;text-align:center">
+          <div style="font-size:4rem;color:var(--audio);margin-bottom:14px">♫</div>
+          <div style="font-size:.95rem;font-weight:700;margin-bottom:16px">{{ f.original_name }}</div>
+          <audio controls style="width:100%">
+            <source src="/raw/{{ f.id }}" type="{{ f.mime }}">
+          </audio>
+        </div>
+      {% elif f.type == 'image' %}
+        <img src="/raw/{{ f.id }}" alt="{{ f.original_name }}" id="imgEl">
+      {% elif f.type == 'archive' %}
+        <div class="no-prev">
+          <span style="font-size:4rem;color:var(--archive)">⊞</span>
+          <h3 style="font-size:.95rem;font-weight:700">Archive File</h3>
+          <a href="/download/{{ f.id }}" class="btn btn-gold">↓ Download Archive</a>
+        </div>
+        {% if archive_contents %}
+        <div style="border-top:1px solid var(--border);max-height:340px;overflow-y:auto;background:var(--bg2)">
+          <div style="padding:10px 14px;font-size:.74rem;color:var(--text3);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.07em">
+            ⊞ {{ archive_contents|length }} items inside
+          </div>
+          <div style="padding:8px 12px">
+            <table class="archive-tbl">
+              <thead><tr><th>Name</th><th>Size</th><th>Compressed</th></tr></thead>
+              <tbody>
+                {% for item in archive_contents %}
+                <tr>
+                  <td>{{ '📁' if item.is_dir else '📄' }} {{ item.name }}</td>
+                  <td>{{ item.size }}</td>
+                  <td>{{ item.compressed }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="no-prev">
+          <span style="font-size:4rem;opacity:.3">⬡</span>
+          <div style="font-size:.9rem;color:var(--text2)">{{ f.original_name }}</div>
+          <a href="/download/{{ f.id }}" class="btn btn-gold">↓ Download File</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- URL Sharing -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header"><div class="card-title">⟐ Share & Direct URLs</div></div>
+      <div class="card-body">
+        <div class="url-row">
+          <div class="url-label-row"><span class="dot-green"></span> Direct Stream / Raw URL (plays directly in any player)</div>
+          <div class="url-box">
+            <input type="text" id="rawUrl" value="{{ raw_url }}" readonly>
+            <button class="copy-btn" onclick="copyText('{{ raw_url }}',this)">⎘ Copy</button>
+          </div>
+        </div>
+        <div class="url-row">
+          <div class="url-label-row"><span class="dot-blue"></span> View Page URL</div>
+          <div class="url-box">
+            <input type="text" value="http://{{ host }}/file/{{ f.id }}" readonly>
+            <button class="copy-btn" onclick="copyText('http://{{ host }}/file/{{ f.id }}',this)">⎘ Copy</button>
+          </div>
+        </div>
+        <div class="url-row">
+          <div class="url-label-row"><span class="dot-gold"></span> Download URL</div>
+          <div class="url-box">
+            <input type="text" value="http://{{ host }}/download/{{ f.id }}" readonly>
+            <button class="copy-btn" onclick="copyText('http://{{ host }}/download/{{ f.id }}',this)">⎘ Copy</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <a href="/raw/{{ f.id }}" target="_blank" class="btn btn-green btn-sm">▶ Open Raw</a>
+          <a href="/download/{{ f.id }}" class="btn btn-outline btn-sm">↓ Download</a>
+          <a href="/qr/{{ f.id }}" target="_blank" class="btn btn-outline btn-sm">⎗ QR Code</a>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('shareModal').classList.add('open')">🌐 Network</button>
+        </div>
+        <div class="net-info" style="margin-top:12px" id="netInfo">Loading network URLs...</div>
+      </div>
+    </div>
+
+    {% if f.type in ['video','audio','image'] %}
+    <!-- Embed Code -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header">
+        <div class="card-title toggle-section" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+          ⟨/⟩ Embed Code <span class="arr">▾</span>
+        </div>
+      </div>
+      <div class="section-body card-body" style="padding-top:14px">
+        {% if f.type == 'video' %}
+        <div style="margin-bottom:10px">
+          <label style="margin-bottom:6px">HTML Video Embed</label>
+          <textarea class="embed-code" id="embedHtml">&lt;video controls width="100%" style="max-width:800px"&gt;
+  &lt;source src="{{ raw_url }}" type="{{ f.mime }}"&gt;
+&lt;/video&gt;</textarea>
+        </div>
+        {% elif f.type == 'audio' %}
+        <textarea class="embed-code" id="embedHtml">&lt;audio controls style="width:100%"&gt;
+  &lt;source src="{{ raw_url }}" type="{{ f.mime }}"&gt;
+&lt;/audio&gt;</textarea>
+        {% elif f.type == 'image' %}
+        <textarea class="embed-code" id="embedHtml">&lt;img src="{{ raw_url }}" alt="{{ f.original_name }}" style="max-width:100%"&gt;</textarea>
+        {% endif %}
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="copyText(document.getElementById('embedHtml').value,this)">⎘ Copy Embed</button>
+        <div style="margin-top:10px;font-size:.73rem;color:var(--text3)">Markdown: <code style="background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--text2)">![{{ f.original_name }}]({{ raw_url }})</code></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if is_owner %}
+    <!-- Edit Info -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header">
+        <div class="card-title toggle-section" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+          ✎ Edit File Info <span class="arr">▾</span>
+        </div>
+      </div>
+      <div class="section-body card-body" style="padding-top:14px">
+        <form action="/update/{{ f.id }}" method="post">
+          <div class="form-group"><label>Description</label><textarea name="description" rows="2" placeholder="Add a description...">{{ f.description or '' }}</textarea></div>
+          <div class="form-group"><label>Tags</label><input type="text" name="tags" value="{{ f.tags|join(', ') if f.tags else '' }}" placeholder="tag1, tag2"></div>
+          <div class="form-group"><label>Folder</label><input type="text" name="folder" value="{{ f.folder or '' }}" placeholder="Folder name"></div>
+          <div class="form-group"><label>Notes (private)</label><textarea name="notes" rows="2" placeholder="Personal notes...">{{ f.notes or '' }}</textarea></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Set Expiry (days, 0=remove)</label>
+              <input type="number" name="expires_days" placeholder="0=no expiry" min="0">
+            </div>
+            <div class="form-group">
+              <label>New File Password</label>
+              <input type="password" name="new_file_password" placeholder="Set/change password">
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <label class="form-check"><input type="checkbox" name="is_public" value="1" {% if f.is_public %}checked{% endif %}> 🌐 Make Public</label>
+            {% if f.file_password %}<label class="form-check"><input type="checkbox" name="remove_password" value="1"> Remove Password</label>{% endif %}
+          </div>
+          <button type="submit" class="btn btn-gold btn-sm">✓ Save Changes</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar-stack">
+    <!-- File info -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">⬡ File Details</div></div>
+      <div class="card-body">
+        <table class="meta-table">
+          <tr><td>Name</td><td title="{{ f.original_name }}">{{ f.original_name[:40] }}{% if f.original_name|length > 40 %}…{% endif %}</td></tr>
+          <tr><td>Size</td><td>{{ fmt_size(f.size) }}</td></tr>
+          <tr><td>Type</td><td><span class="badge badge-{{ f.type }}">{{ f.type }}</span></td></tr>
+          <tr><td>MIME</td><td style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text3)">{{ f.mime }}</td></tr>
+          <tr><td>MD5</td><td style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text3);word-break:break-all">{{ f.checksum or '—' }}</td></tr>
+          <tr><td>Uploaded</td><td>{{ fmt_date(f.uploaded_at) }}</td></tr>
+          <tr><td>Owner</td><td><a href="/u/{{ owner.username }}" style="color:var(--blue)">{{ owner.username }}</a></td></tr>
+          {% if f.folder %}<tr><td>Folder</td><td>📁 {{ f.folder }}</td></tr>{% endif %}
+          {% if f.expires_at %}<tr><td>Expires</td><td style="color:var(--red)">{{ fmt_date(f.expires_at) }}</td></tr>{% endif %}
+          {% if f.file_password %}<tr><td>Password</td><td style="color:var(--gold)">🔒 Protected</td></tr>{% endif %}
+          <tr><td>Visibility</td><td>{% if f.is_public %}<span style="color:var(--green)">🌐 Public</span>{% else %}<span style="color:var(--text3)">🔒 Private</span>{% endif %}</td></tr>
+          <tr><td>File ID</td><td style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text3)">{{ f.id }}</td></tr>
+        </table>
+        {% if f.description %}<div style="margin-top:10px;padding:8px 10px;background:var(--bg2);border-radius:6px;font-size:.8rem;color:var(--text2)">{{ f.description }}</div>{% endif %}
+        {% if f.tags %}<div style="margin-top:8px">{% for t in f.tags %}<span class="tag-pill">{{ t }}</span>{% endfor %}</div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">📊 Analytics</div></div>
+      <div class="card-body">
+        <div class="stat-grid">
+          <div class="stat-mini"><span class="sn" style="color:var(--blue)">{{ f.views or 0 }}</span><span class="sl">Views</span></div>
+          <div class="stat-mini"><span class="sn" style="color:var(--green)">{{ f.downloads or 0 }}</span><span class="sl">Downloads</span></div>
+          <div class="stat-mini"><span class="sn" style="color:var(--audio)">{{ fmt_size(f.bandwidth_served or 0) }}</span><span class="sl">Bandwidth</span></div>
+          <div class="stat-mini"><span class="sn" style="color:var(--gold)">{{ (f.views or 0) + (f.downloads or 0) }}</span><span class="sl">Total</span></div>
+        </div>
+      </div>
+    </div>
+
+    {% if is_owner %}
+    <!-- Actions -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚙ Actions</div></div>
+      <div class="card-body">
+        <div class="actions-list">
+          <a href="/download/{{ f.id }}" class="btn btn-gold">↓ Download File</a>
+          <a href="/raw/{{ f.id }}" target="_blank" class="btn btn-green">▶ Open Raw Stream</a>
+          <button onclick="document.getElementById('renameModal').classList.add('open')" class="btn btn-outline">✎ Rename</button>
+          <button onclick="togglePublic('{{ f.id }}')" class="btn btn-outline" id="pubBtn">
+            {{ '🔒 Make Private' if f.is_public else '🌐 Make Public' }}
+          </button>
+          <button onclick="toggleStar('{{ f.id }}')" class="btn btn-outline {% if f.is_starred %}btn-gold{% endif %}" id="starBtn">
+            {{ '★ Unstar' if f.is_starred else '☆ Star File' }}
+          </button>
+          <a href="/qr/{{ f.id }}" target="_blank" class="btn btn-outline">⎗ QR Code</a>
+          <a href="/api/file/{{ f.id }}" target="_blank" class="btn btn-outline">⟨/⟩ API JSON</a>
+          <form action="/delete/{{ f.id }}" method="post" onsubmit="return confirm('Permanently delete this file?')">
+            <button type="submit" class="btn btn-red btn-full">✗ Delete File</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    {% if f.notes %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">📝 Private Notes</div></div>
+      <div class="card-body"><div style="font-size:.83rem;color:var(--text2);line-height:1.6;white-space:pre-wrap">{{ f.notes }}</div></div>
+    </div>
+    {% endif %}
+
+    <!-- Rename history -->
+    {% if f.rename_history %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">📋 Rename History</div></div>
+      <div class="card-body">
+        <div class="rename-hist">
+          {% for h in f.rename_history|reverse %}
+          <div class="rh-item"><span class="rh-from">{{ h.from }}</span> · <span style="color:var(--text3)">{{ fmt_rel(h.at) }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="modal-bg" id="renameModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">✎ Rename File</div>
+    <form action="/rename/{{ f.id }}" method="post">
+      <div class="form-group">
+        <label>New Filename</label>
+        <input type="text" name="new_name" value="{{ f.original_name }}" required autofocus>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-gold">✓ Rename</button>
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('renameModal').classList.remove('open')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load network info
+fetch('/share-info/{{ f.id }}')
+  .then(r=>r.json())
+  .then(d => {
+    document.getElementById('netInfo').innerHTML =
+      `<strong>Local:</strong> <a href="${d.local}" target="_blank">${d.local}</a><br>` +
+      `<strong>LAN:</strong> <a href="${d.network}" target="_blank">${d.network}</a><br>` +
+      `<strong>Raw Local:</strong> <a href="${d.raw_local}" target="_blank">${d.raw_local}</a><br>` +
+      `<span style="font-size:.7rem;color:var(--text3)">Share LAN URL with devices on the same WiFi network</span>`;
+  }).catch(() => document.getElementById('netInfo').innerHTML = '<span style="color:var(--text3)">Network info unavailable</span>');
+
+async function togglePublic(fid) {
+  const r = await fetch(`/toggle-public/${fid}`, {method:'POST'});
+  const d = await r.json();
+  const btn = document.getElementById('pubBtn');
+  btn.textContent = d.is_public ? '🔒 Make Private' : '🌐 Make Public';
+  showToast(d.is_public ? 'File is now public' : 'File is now private');
+}
+async function toggleStar(fid) {
+  const r = await fetch(`/star/${fid}`, {method:'POST'});
+  const d = await r.json();
+  const btn = document.getElementById('starBtn');
+  btn.textContent = d.starred ? '★ Unstar' : '☆ Star File';
+  btn.classList.toggle('btn-gold', d.starred);
+  showToast(d.msg);
+}
+</script>
+{% endblock %}

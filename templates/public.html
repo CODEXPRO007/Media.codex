@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Public Gallery — MediaVault Pro{% endblock %}
+{% block extra_css %}
+<style>
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gcard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s;animation:fadeIn .25s ease both}
+.gcard:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.4);border-color:var(--border2)}
+.gthumb{width:100%;aspect-ratio:16/10;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;cursor:pointer}
+.gthumb img{width:100%;height:100%;object-fit:cover}
+.ginfo{padding:10px 12px}
+.gname{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:var(--text);margin-bottom:5px}
+.gmeta{display:flex;align-items:center;justify-content:space-between}
+.gowner{font-size:.72rem;color:var(--blue)}
+.pub-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.pub-search{flex:1;min-width:200px;position:relative}
+.pub-search input{padding-left:32px}
+.pub-search .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3)}
+</style>
+{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+  <h1 style="font-size:1.2rem;font-weight:800">🌐 Public Gallery</h1>
+  <span style="font-size:.82rem;color:var(--text2)">{{ total }} public file(s)</span>
+</div>
+<div class="pub-controls">
+  <div class="pub-search">
+    <span class="si">⌕</span>
+    <form method="get" action="/public">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search public files...">
+    </form>
+  </div>
+  <a href="/public?type=video" class="btn btn-outline btn-sm {% if ftype=='video' %}btn-gold{% endif %}">▶ Video</a>
+  <a href="/public?type=image" class="btn btn-outline btn-sm {% if ftype=='image' %}btn-gold{% endif %}">◉ Image</a>
+  <a href="/public?type=audio" class="btn btn-outline btn-sm {% if ftype=='audio' %}btn-gold{% endif %}">♫ Audio</a>
+  <a href="/public" class="btn btn-outline btn-sm {% if not ftype %}btn-gold{% endif %}">All</a>
+  <select class="sel-sort" onchange="window.location='/public?sort='+this.value+'{% if q %}&q={{ q }}{% endif %}{% if ftype %}&type={{ ftype }}{% endif %}'">
+    <option value="newest" {% if sort=='newest' %}selected{% endif %}>↓ Newest</option>
+    <option value="popular" {% if sort=='popular' %}selected{% endif %}>🔥 Popular</option>
+    <option value="oldest" {% if sort=='oldest' %}selected{% endif %}>↑ Oldest</option>
+  </select>
+</div>
+{% if files %}
+<div class="gallery-grid stagger">
+  {% for f in files %}
+  <div class="gcard">
+    <div class="gthumb" onclick="location.href='/file/{{ f.id }}'">
+      {% if f.type == 'image' %}
+        <img src="/raw/{{ f.id }}" alt="{{ f.original_name }}" loading="lazy">
+      {% elif f.type == 'video' %}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:2rem;color:var(--video)">▶</span>
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,107,53,.8);display:flex;align-items:center;justify-content:center"><span style="color:#fff;margin-left:3px">▶</span></div>
+        </div>
+      {% elif f.type == 'audio' %}
+        <span style="font-size:2.2rem;color:var(--audio)">♫</span>
+      {% else %}
+        <span style="font-size:2rem;color:var(--text3)">⬡</span>
+      {% endif %}
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;gap:6px;opacity:0;transition:opacity .18s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+        <a href="/file/{{ f.id }}" style="background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:5px 12px;font-size:.76rem;font-weight:600">View</a>
+        <a href="/download/{{ f.id }}" style="background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:5px 12px;font-size:.76rem;font-weight:600">↓</a>
+      </div>
+    </div>
+    <div class="ginfo">
+      <a href="/file/{{ f.id }}" class="gname" title="{{ f.original_name }}">{{ f.original_name }}</a>
+      <div class="gmeta">
+        <a href="/u/{{ f.owner_name }}" class="gowner">@{{ f.owner_name }}</a>
+        <span class="badge badge-{{ f.type }}">{{ f.type }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:.7rem;color:var(--text3)">
+        <span>{{ fmt_size(f.size) }}</span>
+        <span>👁 {{ f.views or 0 }}</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:80px;color:var(--text3)">
+  <div style="font-size:3rem;margin-bottom:16px;opacity:.3">🌐</div>
+  <h3 style="color:var(--text2);margin-bottom:8px">No public files{% if q %} matching "{{ q }}"{% endif %}</h3>
+  <p style="font-size:.82rem">{% if current_user %}Upload a file and make it public to share with everyone.{% else %}<a href="/register">Create an account</a> to start uploading.{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}
